@@ -5,7 +5,6 @@ const { MongoClient } = require('mongodb');
 const app = express();
 let db = null;
 
-// Conexão reutilizável com o Mongo
 async function conectarMongo() {
   if (db) return db;
 
@@ -15,11 +14,10 @@ async function conectarMongo() {
   });
 
   await client.connect();
-  db = client.db(process.env.DB_NAME || 'railway'); // Usa 'railway' como padrão
+  db = client.db(process.env.DB_NAME || 'railway');
   return db;
 }
 
-// Rota de verificação
 app.get('/verificar-assinatura', async (req, res) => {
   const telefone = req.query.telefone;
   if (!telefone) {
@@ -47,4 +45,4 @@ app.get('/verificar-assinatura', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`✅ API rodando na porta ${PORT}`));
