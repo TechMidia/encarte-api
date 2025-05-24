@@ -3,17 +3,20 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 
 const app = express();
-let client;
+
+let db = null; // Armazena conexão reutilizável
 
 async function conectarMongo() {
-  if (!client) {
-    client = new MongoClient(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-    await client.connect();
-  }
-  return client.db(process.env.DB_NAME).collection(process.env.COLLECTION_NAME);
+  if (db) return db;
+
+  const client = new MongoClient(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+
+  await client.connect();
+  db = client.db(process.env.DB_NAME); // Mantém conexão ativa
+  return db;
 }
 
 app.get('/verificar-assinatura', async (req, res) => {
@@ -21,7 +24,9 @@ app.get('/verificar-assinatura', async (req, res) => {
   if (!telefone) return res.status(400).json({ erro: 'Telefone não informado' });
 
   try {
-    const col = await conectarMongo();
+    const db = await conectarMongo();
+    const col = db.collection(process.env.COLLECTION_NAME);
+
     const usuario = await col.findOne({ telefone });
 
     if (!usuario) {
@@ -34,9 +39,10 @@ app.get('/verificar-assinatura', async (req, res) => {
     });
 
   } catch (err) {
+    console.error('Erro ao acessar MongoDB:', err.message);
     return res.status(500).json({ erro: 'Erro no servidor', detalhe: err.message });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`✅ API rodando na porta ${PORT}`));
