@@ -9,9 +9,11 @@ let db = null; // Armazena conexão reutilizável
 async function conectarMongo() {
   if (db) return db;
 
-  const client = new MongoClient(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+ const client = new MongoClient(process.env.MONGODB_URI || process.env.MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
+
   });
 
   await client.connect();
