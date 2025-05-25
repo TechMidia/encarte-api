@@ -9,7 +9,7 @@ let db = null;
 async function conectarMongo() {
   if (db) return db;
 
-  const client = new MongoClient(process.env.MONGODB_URI, {
+  const client = new MongoClient(process.env.MONGO_URL,{
     useNewUrlParser: true,
     useUnifiedTopology: true
   });
