@@ -9,10 +9,13 @@ let db = null;
 async function conectarMongo() {
   if (db) return db;
 
-  const client = new MongoClient(process.env.MONGO_URL,{
+const client = new MongoClient(
+  process.env.MONGODB_URI || process.env.MONGO_URL || process.env.MONGO_PUBLIC_URL,
+  {
     useNewUrlParser: true,
     useUnifiedTopology: true
-  });
+  }
+);
 
   await client.connect();
   db = client.db(process.env.DB_NAME || 'railway'); // padrão: railway
