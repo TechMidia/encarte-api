@@ -10,7 +10,7 @@ async function conectarMongo() {
   if (db) return db;
 
 const client = new MongoClient(
-  process.env.MONGODB_URI || process.env.MONGO_URL || process.env.MONGO_PUBLIC_URL,
+  process.env.MONGODB_URI,
   {
     useNewUrlParser: true,
     useUnifiedTopology: true
