@@ -19,7 +19,7 @@ app.get('/verificar-assinatura', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'SELECT assinatura, plano, encartes_semana FROM usuarios WHERE telefone = $1',
+      'SELECT assinatura, plano, encartes_semana FROM usuario WHERE telefone = $1',
       [telefone]
     );
 
