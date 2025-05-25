@@ -6,7 +6,9 @@ const app = express();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Necessário para produção no Railway
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 app.get('/verificar-assinatura', async (req, res) => {
@@ -25,12 +27,15 @@ app.get('/verificar-assinatura', async (req, res) => {
       return res.status(404).json({ assinatura: null, mensagem: 'Usuário não encontrado' });
     }
 
-    const { assinatura, plano, encartes_semana } = result.rows[0];
-
-    return res.json({ assinatura, plano, encartes_semana });
+    const usuario = result.rows[0];
+    return res.json({
+      assinatura: usuario.assinatura,
+      plano: usuario.plano,
+      encartes_semana: usuario.encartes_semana
+    });
   } catch (err) {
-    console.error('Erro ao consultar assinatura:', err);
-    return res.status(500).json({ erro: 'Erro interno', detalhe: err.message });
+    console.error('Erro:', err);
+    return res.status(500).json({ erro: 'Erro no servidor', detalhe: err.message });
   }
 });
 
