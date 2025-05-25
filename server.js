@@ -10,7 +10,7 @@ async function conectarMongo() {
   if (db) return db;
 
 const client = new MongoClient(
-  'mongodb://mongo:hWDEOJkNcpgeQSxWEdbHpsRdcMolkUhz@containers-us-west-1.railway.internal:27017/railway',
+  'MONGODB_URI=mongodb://mongo:hWDEOJkNcpgeQSxWEdbHpsRdcMolkUhz@containers-us-west-1.railway.internal:27017/railway',
   {
     useNewUrlParser: true,
     useUnifiedTopology: true
