@@ -12,6 +12,7 @@ const pool = new Pool({
   }
 });
 
+// Rota para verificar assinatura
 app.get('/verificar-assinatura', async (req, res) => {
   const telefone = req.query.telefone?.trim();
   if (!telefone) {
@@ -38,6 +39,34 @@ app.get('/verificar-assinatura', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro no servidor', detalhe: err.message });
+  }
+});
+
+// Rota para cadastrar novo usuário
+app.post('/usuario', async (req, res) => {
+  const { telefone } = req.body;
+
+  if (!telefone) {
+    return res.status(400).json({ erro: 'Telefone é obrigatório' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    const resultado = await client.query(
+      'INSERT INTO usuario (telefone, assinatura, plano, encarte_semana) VALUES ($1, $2, $3, $4) RETURNING *',
+      [telefone, false, null, 0]
+    );
+
+    client.release();
+
+    res.status(201).json({
+      mensagem: 'Usuário cadastrado com sucesso',
+      usuario: resultado.rows[0]
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao cadastrar usuário', detalhe: err.message });
   }
 });
 
