@@ -12,7 +12,7 @@ const pool = new Pool({
   }
 });
 
-// Rota para verificar se o usuário já tem assinatura
+// Rota para verificar assinatura
 app.get('/verificar-assinatura', async (req, res) => {
   const telefone = req.query.telefone?.trim();
   if (!telefone) {
@@ -37,7 +37,8 @@ app.get('/verificar-assinatura', async (req, res) => {
       nome_mercado: usuario.nome_mercado,
       endereco: usuario.endereco,
       instagram: usuario.instagram,
-      logomarca: usuario.logomarca
+      logomarca: usuario.logomarca,
+      oferta: usuario.oferta
     });
   } catch (err) {
     console.error(err);
@@ -45,9 +46,9 @@ app.get('/verificar-assinatura', async (req, res) => {
   }
 });
 
-// Rota para cadastrar novo usuário
+// Rota para cadastrar usuário
 app.post('/usuario', async (req, res) => {
-  const { telefone, nome_mercado, endereco, instagram, logomarca } = req.body;
+  const { telefone, nome_mercado, endereco, instagram, logomarca, oferta } = req.body;
 
   if (!telefone) {
     return res.status(400).json({ erro: 'Telefone é obrigatório' });
@@ -56,10 +57,11 @@ app.post('/usuario', async (req, res) => {
   try {
     const client = await pool.connect();
     const resultado = await client.query(
-      `INSERT INTO usuario (telefone, nome_mercado, endereco, instagram, logomarca, assinatura, plano, encarte_semana)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
-      [telefone, nome_mercado, endereco, instagram, logomarca, false, null, 0]
+      `INSERT INTO usuario (
+        telefone, nome_mercado, endereco, instagram, logomarca, oferta, assinatura, plano, encarte_semana
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *`,
+      [telefone, nome_mercado, endereco, instagram, logomarca, oferta, false, null, 0]
     );
     client.release();
 
