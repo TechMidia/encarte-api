@@ -29,7 +29,7 @@ const result = await pool.query("SELECT * FROM usuario WHERE telefone = $1", [te
   telefone: usuario.telefone,
   assinatura: usuario.assinatura,
   plano: usuario.plano,
-  encartes_semana: usuario.encartes_semana || 0
+  encartes_semana: usuario.encartes_semana
 });
     });
   } catch (err) {
