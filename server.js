@@ -113,8 +113,7 @@ app.patch('/usuario/encartes', async (req, res) => {
   }
 });
 
-/*
-// 🛠️ (Opcional) PATCH /usuario — atualizar dados do mercado
+// PATCH /usuario — atualizar dados do mercado
 app.patch('/usuario', async (req, res) => {
   const { telefone, nome_mercado, endereco, instagram, logomarca, oferta } = req.body;
 
@@ -139,7 +138,7 @@ app.patch('/usuario', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao atualizar dados', detalhe: err.message });
   }
 });
-*/
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ API rodando na porta ${PORT}`));
