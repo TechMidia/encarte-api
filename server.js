@@ -26,9 +26,11 @@ const result = await pool.query("SELECT * FROM usuario WHERE telefone = $1", [te
 
     const usuario = result.rows[0];
     return res.json({
-      assinatura: usuario.assinatura,
-      plano: usuario.plano,
-      encartes_semana: usuario.encartes_semana
+  telefone: usuario.telefone,
+  assinatura: usuario.assinatura || null,
+  plano: usuario.plano || null,
+  encartes_semana: usuario.encartes_semana || 0
+});
     });
   } catch (err) {
     console.error('Erro:', err);
