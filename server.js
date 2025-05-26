@@ -3,6 +3,7 @@ const express = require('express');
 const { Pool } = require('pg');
 
 const app = express();
+app.use(express.json());
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -18,8 +19,10 @@ app.get('/verificar-assinatura', async (req, res) => {
   }
 
   try {
-    const client = await conectarPostgres();
+    const client = await pool.connect();
     const resultado = await client.query('SELECT * FROM usuario WHERE telefone = $1', [telefone]);
+
+    client.release();
 
     if (resultado.rows.length === 0) {
       return res.status(404).json({ assinatura: null, mensagem: 'Usuário não encontrado' });
