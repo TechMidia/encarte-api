@@ -26,7 +26,7 @@ cron.schedule('1 0 * * 0', async () => {
   }
 });
 
-// 🔎 Rota GET: Verificar assinatura
+// 🔎 GET /verificar-assinatura
 app.get('/verificar-assinatura', async (req, res) => {
   const telefone = req.query.telefone?.trim();
   if (!telefone) {
@@ -61,7 +61,7 @@ app.get('/verificar-assinatura', async (req, res) => {
   }
 });
 
-// 📝 Rota POST: Cadastrar novo usuário
+// 📝 POST /usuario — Cadastrar novo usuário
 app.post('/usuario', async (req, res) => {
   const { telefone, nome_mercado, endereco, instagram, logomarca, oferta } = req.body;
 
@@ -87,6 +87,59 @@ app.post('/usuario', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao cadastrar usuário', detalhe: err.message });
   }
 });
+
+// 🔃 PATCH /usuario/encartes — contabiliza novo encarte
+app.patch('/usuario/encartes', async (req, res) => {
+  const { telefone } = req.body;
+
+  if (!telefone) {
+    return res.status(400).json({ erro: 'Telefone é obrigatório' });
+  }
+
+  try {
+    const client = await pool.connect();
+    await client.query(`
+      UPDATE usuario
+      SET encarte_semana = encarte_semana + 1,
+          encarte_total = encarte_total + 1
+      WHERE telefone = $1
+    `, [telefone]);
+
+    client.release();
+    res.status(200).json({ mensagem: 'Encarte contabilizado com sucesso' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao atualizar contador', detalhe: err.message });
+  }
+});
+
+/*
+// 🛠️ (Opcional) PATCH /usuario — atualizar dados do mercado
+app.patch('/usuario', async (req, res) => {
+  const { telefone, nome_mercado, endereco, instagram, logomarca, oferta } = req.body;
+
+  if (!telefone) return res.status(400).json({ erro: 'Telefone é obrigatório' });
+
+  try {
+    const client = await pool.connect();
+    await client.query(`
+      UPDATE usuario SET
+        nome_mercado = $2,
+        endereco = $3,
+        instagram = $4,
+        logomarca = $5,
+        oferta = $6
+      WHERE telefone = $1
+    `, [telefone, nome_mercado, endereco, instagram, logomarca, oferta]);
+
+    client.release();
+    res.status(200).json({ mensagem: 'Dados atualizados com sucesso' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao atualizar dados', detalhe: err.message });
+  }
+});
+*/
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ API rodando na porta ${PORT}`));
