@@ -12,29 +12,29 @@ const pool = new Pool({
 });
 
 app.get('/verificar-assinatura', async (req, res) => {
-  const telefone = req.query.telefone?.trim();
+  const telefone = req.query.telefone;
   if (!telefone) {
     return res.status(400).json({ erro: 'Telefone não informado' });
   }
 
   try {
-const result = await pool.query("SELECT * FROM usuario WHERE telefone = $1", [telefone]);
+    const client = await conectarPostgres();
+    const resultado = await client.query('SELECT * FROM usuario WHERE telefone = $1', [telefone]);
 
-    if (result.rows.length === 0) {
+    if (resultado.rows.length === 0) {
       return res.status(404).json({ assinatura: null, mensagem: 'Usuário não encontrado' });
     }
 
-    const usuario = result.rows[0];
+    const usuario = resultado.rows[0];
     return res.json({
-  telefone: usuario.telefone,
-  assinatura: usuario.assinatura,
-  plano: usuario.plano,
-  encartes_semana: usuario.encartes_semana
-});
+      telefone: usuario.telefone,
+      assinatura: usuario.assinatura,
+      plano: usuario.plano,
+      encartes_semana: usuario.encartes_semana
     });
   } catch (err) {
-    console.error('Erro:', err);
-    return res.status(500).json({ erro: 'Erro no servidor', detalhe: err.message });
+    console.error(err);
+    res.status(500).json({ erro: 'Erro no servidor', detalhe: err.message });
   }
 });
 
