@@ -13,7 +13,7 @@ const pool = new Pool({
 });
 
 app.get('/verificar-assinatura', async (req, res) => {
-  const telefone = req.query.telefone;
+  const telefone = req.query.telefone?.trim();
   if (!telefone) {
     return res.status(400).json({ erro: 'Telefone não informado' });
   }
