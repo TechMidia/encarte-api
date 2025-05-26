@@ -33,7 +33,7 @@ app.get('/verificar-assinatura', async (req, res) => {
       telefone: usuario.telefone,
       assinatura: usuario.assinatura,
       plano: usuario.plano,
-      encartes_semana: usuario.encartes_semana
+      encarte_semana: usuario.encarte_semana
     });
   } catch (err) {
     console.error(err);
