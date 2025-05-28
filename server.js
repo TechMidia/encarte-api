@@ -11,9 +11,6 @@ const pool = require('./db'); // conexão com PostgreSQL
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
 });
 
 app.use(cors());
