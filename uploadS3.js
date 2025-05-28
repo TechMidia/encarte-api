@@ -1,3 +1,5 @@
+// uploadS3.js
+
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
@@ -9,19 +11,17 @@ const s3 = new AWS.S3({
 });
 
 async function uploadToS3(filePath, fileName) {
-  // Lê o arquivo local
   const fileContent = fs.readFileSync(filePath);
 
-  // Monta os parâmetros do upload
   const params = {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: `encartes/${fileName}`,
     Body: fileContent,
     ContentType: 'image/png',
-    ACL: 'public-read', // Deixa a imagem pública
+    // Retire a linha abaixo se o bucket não permitir mais ACL
+    // ACL: 'public-read',
   };
 
-  // Realiza o upload e retorna a URL
   const data = await s3.upload(params).promise();
   return data.Location;
 }
