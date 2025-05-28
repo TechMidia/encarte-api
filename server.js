@@ -11,7 +11,6 @@ const pool = require('./db'); // conexão com PostgreSQL
 dotenv.config();
 
 const app = express();
-});
 
 app.use(cors());
 app.use(express.json());
