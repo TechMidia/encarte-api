@@ -1,144 +1,52 @@
-require('dotenv').config();
 const express = require('express');
-const { Pool } = require('pg');
-const cron = require('node-cron');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const path = require('path');
+const uploadToS3 = require('./uploadS3');
+const imagemRoute = require('./routes/imagem');
+const planoRoute = require('./routes/plano');
+const usuarioRoute = require('./routes/usuario');
+const pool = require('./db'); // conexão com PostgreSQL
+
+dotenv.config();
 
 const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(cors());
 app.use(express.json());
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+// Rotas externas
+app.use('/api', imagemRoute);
+app.use('/api', usuarioRoute);
+app.use('/plano', planoRoute);
+
+// Rota principal (teste)
+app.get('/', (req, res) => {
+  res.send('API do Encarte está rodando com sucesso!');
 });
 
-// 🔁 CRON: Zera encartes semanais todo domingo à 00:01
-cron.schedule('1 0 * * 0', async () => {
-  console.log('⏰ Resetando encartes semanais...');
-  try {
-    const client = await pool.connect();
-    await client.query('UPDATE usuario SET encarte_semana = 0');
-    client.release();
-    console.log('✅ Encartes semanais resetados com sucesso!');
-  } catch (err) {
-    console.error('❌ Erro ao resetar encartes semanais:', err.message);
-  }
-});
-
-// 🔎 GET /verificar-assinatura
-app.get('/verificar-assinatura', async (req, res) => {
-  const telefone = req.query.telefone?.trim();
-  if (!telefone) {
-    return res.status(400).json({ erro: 'Telefone não informado' });
-  }
+// Rota de criação do encarte
+app.post('/criar-encarte', async (req, res) => {
+  const imagePath = path.join(__dirname, 'encarte.png'); // Imagem temporária!
 
   try {
+    const imageUrl = await uploadToS3(imagePath, `encarte-${Date.now()}.png`);
+
     const client = await pool.connect();
-    const resultado = await client.query('SELECT * FROM usuario WHERE telefone = $1', [telefone]);
-    client.release();
-
-    if (resultado.rows.length === 0) {
-      return res.status(404).json({ assinatura: null, mensagem: 'Usuário não encontrado' });
-    }
-
-    const usuario = resultado.rows[0];
-    return res.json({
-      telefone: usuario.telefone,
-      assinatura: usuario.assinatura,
-      plano: usuario.plano,
-      encarte_semana: usuario.encarte_semana,
-      encarte_total: usuario.encarte_total,
-      nome_mercado: usuario.nome_mercado,
-      endereco: usuario.endereco,
-      instagram: usuario.instagram,
-      logomarca: usuario.logomarca,
-      oferta: usuario.oferta
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: 'Erro no servidor', detalhe: err.message });
-  }
-});
-
-// 📝 POST /usuario — Cadastrar novo usuário
-app.post('/usuario', async (req, res) => {
-  const { telefone, nome_mercado, endereco, instagram, logomarca, oferta } = req.body;
-
-  if (!telefone) {
-    return res.status(400).json({ erro: 'Telefone é obrigatório' });
-  }
-
-  try {
-    const client = await pool.connect();
-    const resultado = await client.query(
-      `INSERT INTO usuario (
-        telefone, nome_mercado, endereco, instagram, logomarca, oferta,
-        assinatura, plano, encarte_semana, encarte_total
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *`,
-      [telefone, nome_mercado, endereco, instagram, logomarca, oferta, false, null, 0, 0]
+    await client.query(
+      'INSERT INTO encartes (telefone, imagem_url, data_criacao) VALUES ($1, $2, NOW())',
+      [req.body.telefone, imageUrl]
     );
     client.release();
 
-    res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso', usuario: resultado.rows[0] });
+    res.json({ mensagem: 'Encarte criado com sucesso', url: imageUrl });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ erro: 'Erro ao cadastrar usuário', detalhe: err.message });
+    res.status(500).json({ erro: 'Erro ao criar encarte', detalhe: err.message });
   }
 });
 
-// 🔃 PATCH /usuario/encartes — contabiliza novo encarte
-app.patch('/usuario/encartes', async (req, res) => {
-  const { telefone } = req.body;
-
-  if (!telefone) {
-    return res.status(400).json({ erro: 'Telefone é obrigatório' });
-  }
-
-  try {
-    const client = await pool.connect();
-    await client.query(`
-      UPDATE usuario
-      SET encarte_semana = encarte_semana + 1,
-          encarte_total = encarte_total + 1
-      WHERE telefone = $1
-    `, [telefone]);
-
-    client.release();
-    res.status(200).json({ mensagem: 'Encarte contabilizado com sucesso' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: 'Erro ao atualizar contador', detalhe: err.message });
-  }
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
 });
-
-// PATCH /usuario — atualizar dados do mercado
-app.patch('/usuario', async (req, res) => {
-  const { telefone, nome_mercado, endereco, instagram, logomarca, oferta } = req.body;
-
-  if (!telefone) return res.status(400).json({ erro: 'Telefone é obrigatório' });
-
-  try {
-    const client = await pool.connect();
-    await client.query(`
-      UPDATE usuario SET
-        nome_mercado = $2,
-        endereco = $3,
-        instagram = $4,
-        logomarca = $5,
-        oferta = $6
-      WHERE telefone = $1
-    `, [telefone, nome_mercado, endereco, instagram, logomarca, oferta]);
-
-    client.release();
-    res.status(200).json({ mensagem: 'Dados atualizados com sucesso' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: 'Erro ao atualizar dados', detalhe: err.message });
-  }
-});
-
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ API rodando na porta ${PORT}`));
