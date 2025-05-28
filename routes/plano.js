@@ -1,3 +1,5 @@
+// routes/plano.js
+
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
@@ -11,22 +13,43 @@ router.get('/verificar-plano', async (req, res) => {
   }
 
   try {
-    // Exemplo de busca (ajuste para sua lógica real de planos)
-    const result = await pool.query(
+    // Buscar usuário pelo telefone
+    const userResult = await pool.query(
       'SELECT * FROM usuarios WHERE telefone = $1',
       [telefone]
     );
 
-    if (result.rows.length === 0) {
-      return res.json({ assinatura: false, plano: null });
+    if (userResult.rows.length === 0) {
+      // Usuário não cadastrado ou sem assinatura
+      return res.json({ assinatura: false, plano: null, encartesRestantes: 0 });
     }
 
-    // Supondo que plano e limites fiquem em outra tabela, ajuste aqui:
-    // Exemplo de resposta simulada
+    // Exemplo: supondo que o campo "plano" está na tabela usuarios
+    const user = userResult.rows[0];
+    let encartesPorSemana = 0;
+
+    if (user.plano === 'Plano 1') encartesPorSemana = 2;
+    else if (user.plano === 'Plano 2') encartesPorSemana = 5;
+    else if (user.plano === 'Plano 3') encartesPorSemana = 99; // ilimitado (ajuste para o valor que preferir)
+
+    // Contar quantos encartes o usuário já criou na semana
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0,0,0,0);
+
+    const encartesResult = await pool.query(
+      'SELECT COUNT(*) FROM encartes WHERE telefone = $1 AND data_criacao >= $2',
+      [telefone, startOfWeek]
+    );
+
+    const encartesUsados = parseInt(encartesResult.rows[0].count, 10);
+    let encartesRestantes = encartesPorSemana - encartesUsados;
+    if (user.plano === 'Plano 3') encartesRestantes = 'ilimitado';
+
     res.json({
       assinatura: true,
-      plano: "Plano 2", // ajuste conforme seu banco
-      encartesRestantes: 3 // ajuste conforme a lógica de uso semanal
+      plano: user.plano,
+      encartesRestantes
     });
   } catch (err) {
     console.error(err);
