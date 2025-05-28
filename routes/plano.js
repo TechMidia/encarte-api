@@ -1,26 +1,36 @@
-// routes/plano.js
 const express = require('express');
 const router = express.Router();
-const { verificarPlano } = require('../controllers/planoController');
+const pool = require('../db');
 
-// GET /plano/verificar-plano?telefone=71XXXXXXXXX
+// Rota: GET /plano/verificar-plano?telefone=...
 router.get('/verificar-plano', async (req, res) => {
-  const telefone = req.query.telefone;
+  const { telefone } = req.query;
 
-  if (!telefone || telefone.trim() === '') {
-    return res.status(400).json({ erro: 'O telefone é obrigatório.' });
+  if (!telefone) {
+    return res.status(400).json({ erro: 'Telefone não informado' });
   }
 
   try {
-    const plano = await verificarPlano(telefone.trim());
-    if (plano) {
-      return res.json({ ativo: true, plano });
-    } else {
-      return res.json({ ativo: false });
+    // Exemplo de busca (ajuste para sua lógica real de planos)
+    const result = await pool.query(
+      'SELECT * FROM usuarios WHERE telefone = $1',
+      [telefone]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ assinatura: false, plano: null });
     }
-  } catch (error) {
-    console.error('Erro ao verificar plano:', error.message);
-    return res.status(500).json({ erro: 'Erro interno ao verificar plano.' });
+
+    // Supondo que plano e limites fiquem em outra tabela, ajuste aqui:
+    // Exemplo de resposta simulada
+    res.json({
+      assinatura: true,
+      plano: "Plano 2", // ajuste conforme seu banco
+      encartesRestantes: 3 // ajuste conforme a lógica de uso semanal
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao verificar plano', detalhe: err.message });
   }
 });
 
